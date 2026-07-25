@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quotes</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Quotes <span class="count" id="count"></span></h1>
+    <div class="tools">
+      <button id="export">Export</button>
+      <button id="import">Import</button>
+    </div>
+  </header>
+
+  <div id="notices"></div>
+
+  <form class="compose" id="compose">
+    <textarea class="text" id="f-text" placeholder="Paste or type a quote&hellip;" aria-label="Quote text"></textarea>
+
+    <details class="optional" id="optional">
+      <summary>author, source, note, link &mdash; all optional</summary>
+      <div class="fields">
+        <label><span>AUTHOR</span><input type="text" id="f-author" autocomplete="off"></label>
+        <label><span>SOURCE</span><input type="text" id="f-source" autocomplete="off" placeholder="book, talk, article&hellip;"></label>
+        <label class="wide"><span>WHY YOU SAVED IT</span><textarea id="f-note"></textarea></label>
+        <label class="wide"><span>LINK OR LOCATION</span><input type="text" id="f-link" autocomplete="off" placeholder="url, page number, timestamp"></label>
+      </div>
+    </details>
+
+    <div class="compose-actions">
+      <button type="submit" class="primary" id="save" disabled>Save quote</button>
+      <span class="hint">Only the quote itself is required. Everything else can be added later.</span>
+    </div>
+  </form>
+
+  <div id="list"></div>
+
+</div>
+
+<input type="file" id="file" accept="application/json,.json" hidden>
+
+<dialog id="import-dialog">
+  <h2>Import <span id="import-count"></span></h2>
+  <p id="import-detail"></p>
+  <div class="row">
+    <button id="import-cancel">Cancel</button>
+    <button id="import-merge">Merge — keep what's here</button>
+    <button id="import-replace" class="danger">Replace everything</button>
+  </div>
+</dialog>
+
+<script src="app.js" defer></script>
+</body>
+</html>
