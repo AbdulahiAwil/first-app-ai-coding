@@ -5,6 +5,8 @@ whenever the user asks to commit, push, "save this to git", "put this on GitHub"
 write a commit message — and also when they've just finished a chunk of work and say something
 like "ship it" or "that's done, get it in". Covers the pre-commit verification gate, this repo's
 rationale-heavy message format, and the Windows quoting trap that mangles multi-line messages.
+
+disable-model-invocation: true
 ---
 
 # Commit the Quotes App
