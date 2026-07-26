@@ -126,16 +126,56 @@ textarea.text::placeholder { color: var(--ink-faint); }
 }
 .hint { color: var(--ink-faint); font-size: .78rem; }
 
+/* ---- favorites ---- */
+/* Text-labelled toggle, used in the compose row and above the list. The bare
+   star idiom only reads unambiguously on a card. */
+.fav-toggle {
+  font-size: .8125rem;
+  padding: .35rem .65rem;
+  color: var(--ink-soft);
+}
+.fav-toggle.on { color: var(--accent); border-color: var(--accent); }
+#filter { margin: -1.25rem 0 1.1rem; }
+/* When there's nothing to filter the host must leave no trace, or its negative
+   top margin drags the list up under the compose form. */
+#filter:empty { display: none; }
+
+/* The card star. Absolute so it never pushes the quote text around. */
+.fav {
+  position: absolute;
+  top: .7rem;
+  right: .8rem;
+  border: none;
+  background: none;
+  padding: .1rem .25rem;
+  font-size: 1.15rem;
+  line-height: 1;
+  color: var(--ink-faint);
+  opacity: 0;                      /* revealed on hover — see below */
+  transition: opacity .12s ease;
+}
+.fav.on { color: var(--accent); opacity: 1; }   /* favorited: always visible */
+.quote:hover .fav { opacity: 1; }
+/* Without this the unfavorited star is unreachable by keyboard, since it's
+   only ever revealed by a mouse hover. */
+.fav:focus-visible { opacity: 1; outline: 2px solid #cfc4b4; border-radius: 4px; }
+.fav:hover { color: var(--accent); }
+
 /* ---- list ---- */
 .quote {
+  position: relative;
   background: var(--card);
   border: 1px solid var(--rule);
   border-radius: 8px;
   padding: 1.1rem 1.25rem;
   margin-bottom: .9rem;
 }
+/* inset shadow, not border-left: a real border would shift this card's inner
+   content 2px and misalign it against every unfavorited card. */
+.quote.is-fav { box-shadow: inset 3px 0 0 var(--accent); }
 .quote blockquote {
   margin: 0;
+  padding-right: 1.75rem;          /* keeps long first lines clear of the star */
   font-family: Georgia, "Iowan Old Style", serif;
   font-size: 1.0625rem;
   line-height: 1.65;

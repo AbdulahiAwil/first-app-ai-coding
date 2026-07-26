@@ -34,6 +34,12 @@
         note: typeof q.note === 'string' ? q.note : '',
         link: typeof q.link === 'string' ? q.link : '',
         tags: Array.isArray(q.tags) ? q.tags.filter(function (t) { return typeof t === 'string'; }) : [],
+        // === true, not truthy: junk from a hand-edited import lands on false
+        // rather than becoming a favorite by accident.
+        favorite: q.favorite === true,
+        favoritedAt: q.favorite === true
+          ? (typeof q.favoritedAt === 'string' && q.favoritedAt ? q.favoritedAt : now)
+          : '',
         createdAt: typeof q.createdAt === 'string' ? q.createdAt : now,
         updatedAt: typeof q.updatedAt === 'string' ? q.updatedAt : now
       };
@@ -100,6 +106,21 @@
         q.updatedAt = new Date().toISOString();
         persist();
         return q;
+      },
+      // Deliberately does NOT bump updatedAt — starring is a reaction to a quote,
+      // not an edit of it.
+      setFavorite: function (id, on) {
+        var q = this.get(id);
+        if (!q) return null;
+        q.favorite = !!on;
+        q.favoritedAt = q.favorite ? new Date().toISOString() : '';
+        persist();
+        return q;
+      },
+      favoriteCount: function () {
+        var n = 0;
+        quotes.forEach(function (q) { if (q.favorite) n++; });
+        return n;
       },
       remove: function (id) {
         quotes = quotes.filter(function (q) { return q.id !== id; });
@@ -185,6 +206,18 @@
    * ------------------------------------------------------------------ */
   var compose = $('compose');
   var fText = $('f-text');
+  var composeFav = false;
+
+  function renderComposeFav() {
+    var b = $('f-fav');
+    b.textContent = (composeFav ? '★' : '☆') + ' Favorite';
+    b.setAttribute('aria-pressed', composeFav ? 'true' : 'false');
+    b.className = composeFav ? 'fav-toggle on' : 'fav-toggle';
+  }
+  $('f-fav').addEventListener('click', function () {
+    composeFav = !composeFav;
+    renderComposeFav();
+  });
 
   function composeFields() {
     return {
@@ -192,13 +225,16 @@
       author: $('f-author').value.trim(),
       source: $('f-source').value.trim(),
       note: $('f-note').value.trim(),
-      link: $('f-link').value.trim()
+      link: $('f-link').value.trim(),
+      favorite: composeFav
     };
   }
   function clearCompose() {
     ['f-text', 'f-author', 'f-source', 'f-note', 'f-link'].forEach(function (id) { $(id).value = ''; });
     $('optional').open = false;
     $('save').disabled = true;
+    composeFav = false;
+    renderComposeFav();
   }
 
   fText.addEventListener('input', function () {
@@ -218,7 +254,10 @@
     e.preventDefault();
     var fields = composeFields();
     if (!fields.text) return;
-    Store.add(fields);
+    var saved = Store.add(fields);
+    // A quote starred at capture time should appear even if the favorites view
+    // is already open, so it joins the snapshot rather than waiting for a toggle.
+    if (filterFavorites && saved.favorite) favSnapshot[saved.id] = true;
     clearCompose();
     fText.focus();
     transient = null;
@@ -230,8 +269,33 @@
    * ------------------------------------------------------------------ */
   var editingId = null;
 
+  // Favorites view state. Deliberately NOT persisted: opening the app to a
+  // filtered list looks exactly like losing your collection.
+  var filterFavorites = false;
+  // Set of ids the favourites view is showing. Built when the filter turns on
+  // and only ever grows while it's open, so un-starring doesn't yank a card out
+  // from under the cursor.
+  var favSnapshot = null;
+
+  function starButton(q) {
+    var b = el('button', q.favorite ? 'fav on' : 'fav', q.favorite ? '★' : '☆');
+    b.type = 'button';
+    b.setAttribute('aria-pressed', q.favorite ? 'true' : 'false');
+    b.setAttribute('aria-label', q.favorite ? 'Remove from favorites' : 'Add to favorites');
+    b.title = q.favorite ? 'Remove from favorites' : 'Add to favorites';
+    b.addEventListener('click', function () {
+      var on = !q.favorite;
+      Store.setFavorite(q.id, on);
+      if (filterFavorites && on) favSnapshot[q.id] = true;
+      render();
+    });
+    return b;
+  }
+
   function renderQuote(q) {
-    var card = el('article', 'quote');
+    var card = el('article', q.favorite ? 'quote is-fav' : 'quote');
+
+    card.appendChild(starButton(q));
 
     var bq = el('blockquote', null, q.text);
     card.appendChild(bq);
@@ -283,7 +347,9 @@
   }
 
   function renderEditor(q) {
-    var card = el('article', 'quote');
+    // Keeps the accent edge so it doesn't flicker off mid-edit, but no star —
+    // one control per card, and Store.update() can't touch the flag anyway.
+    var card = el('article', q.favorite ? 'quote is-fav' : 'quote');
     var form = el('form');
 
     var ta = el('textarea', 'text');
@@ -338,20 +404,57 @@
     return card;
   }
 
+  function renderFilter(favCount) {
+    var host = $('filter');
+    host.textContent = '';
+    // Nothing starred yet means nothing to filter — the card stars are the
+    // discovery path, so a dead toggle here would just be a wasted click.
+    // But never hide it while the filter is ON: un-starring your last favorite
+    // would strand you in a filtered view with no way back out.
+    if (!favCount && !filterFavorites) return;
+
+    var b = el('button', filterFavorites ? 'fav-toggle on' : 'fav-toggle',
+      (filterFavorites ? '★' : '☆') + ' Favorites · ' + favCount);
+    b.type = 'button';
+    b.setAttribute('aria-pressed', filterFavorites ? 'true' : 'false');
+    b.addEventListener('click', function () {
+      filterFavorites = !filterFavorites;
+      if (filterFavorites) {
+        favSnapshot = {};
+        Store.all().forEach(function (q) { if (q.favorite) favSnapshot[q.id] = true; });
+      } else {
+        favSnapshot = null;
+      }
+      render();
+    });
+    host.appendChild(b);
+  }
+
   function render() {
     renderNotices();
 
-    var quotes = Store.all().sort(function (a, b) {
+    var all = Store.all().sort(function (a, b) {
       return b.createdAt.localeCompare(a.createdAt);   // newest first
     });
 
-    $('count').textContent = quotes.length ? '· ' + quotes.length : '';
+    var favCount = Store.favoriteCount();
+    // Always the total, never the filtered count — the header shouldn't read
+    // like quotes went missing.
+    $('count').textContent = all.length ? '· ' + all.length : '';
+    renderFilter(favCount);
+
+    // Filter after sorting; favorites never reorder the list.
+    var quotes = filterFavorites
+      ? all.filter(function (q) { return favSnapshot[q.id] === true; })
+      : all;
 
     var list = $('list');
     list.textContent = '';
 
     if (!quotes.length) {
-      list.appendChild(el('p', 'empty', 'Nothing saved yet. Paste something above.'));
+      list.appendChild(el('p', 'empty', filterFavorites
+        ? 'No favorites in view. Turn the filter off and star something.'
+        : 'Nothing saved yet. Paste something above.'));
       return;
     }
 
@@ -453,6 +556,7 @@
 
   /* ------------------------------------------------------------------ */
   Store.init();
+  renderComposeFav();
   render();
   fText.focus();
 })();
