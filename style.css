@@ -1,114 +1,155 @@
 :root {
-  --ink: #17140f;
-  --ink-soft: #6b6459;
-  --ink-faint: #9a9186;
-  --rule: #e6dfd3;
-  --bg: #fbf9f5;
+  --ink: #14161a;
+  --ink-soft: #565d6b;
+  --ink-faint: #8b93a1;
+  --rule: #e7e9ee;
+  --rule-soft: #f0f2f5;
+  --bg: #f6f7f9;
   --card: #fff;
 
-  --accent: #a83c2c;          /* rust — the app's own colour */
-  --accent-deep: #7a2b62;     /* plum, the far end of the primary gradient */
-  --gold: #c0891b;            /* favourites. A star reads gold, not rust. */
-  --gold-wash: #fdf5e3;
+  --accent: #c0442e;          /* rust — the app's own colour */
+  --gold: #b8860b;            /* favourites. A star reads gold, not rust. */
+  --gold-wash: #fdf8ec;
 
   --warn-bg: #fdf3e7;
   --warn-ink: #7a4b12;
+
+  /* One radius scale and one shadow scale, so nothing drifts. Larger radii and
+     layered shadows are what separate this from the 1px-border-on-everything
+     look it replaced. */
+  --r-lg: 16px;
+  --r-md: 12px;
+  --r-sm: 9px;
+  --shadow-1: 0 1px 2px rgba(16,18,24,.04), 0 1px 3px rgba(16,18,24,.05);
+  --shadow-2: 0 2px 4px -1px rgba(16,18,24,.05), 0 12px 28px -8px rgba(16,18,24,.14);
 }
 
 /* The category palette. JS picks a slot with categoryClass(); every colour
-   below is a 700-level tone that still clears contrast on white at 12px, since
-   these get used for small uppercase labels. */
+   below still clears contrast on white at 12px, since these get used for small
+   uppercase labels. */
 .c0 { --cat: #b45309; }   /* amber   */
-.c1 { --cat: #b91c1c; }   /* red     */
+.c1 { --cat: #be123c; }   /* rose    */
 .c2 { --cat: #a21caf; }   /* fuchsia */
 .c3 { --cat: #6d28d9; }   /* violet  */
 .c4 { --cat: #1d4ed8; }   /* blue    */
 .c5 { --cat: #0f766e; }   /* teal    */
 .c6 { --cat: #4d7c0f; }   /* olive   */
-.c7 { --cat: #be185d; }   /* pink    */
+.c7 { --cat: #db2777; }   /* pink    */
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  /* Colour pooled at the top, where there's no text. The reading column stays
-     near-white so the serif keeps its contrast. */
+  /* Colour pooled at the top, where there's no text. Cooler and fainter than
+     before so it reads as light rather than as a texture. */
   background:
-    radial-gradient(58rem 22rem at 10% -10%, #fce9d8 0%, rgba(252,233,216,0) 60%),
-    radial-gradient(52rem 20rem at 88% -6%, #e4ebfb 0%, rgba(228,235,251,0) 62%),
+    radial-gradient(56rem 20rem at 8% -12%, #ffeadd 0%, rgba(255,234,221,0) 62%),
+    radial-gradient(50rem 18rem at 90% -8%, #e3ecfd 0%, rgba(227,236,253,0) 64%),
     var(--bg);
   background-attachment: fixed;
   color: var(--ink);
-  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  font: 16px/1.6 system-ui, -apple-system, "Segoe UI Variable Text", "Segoe UI",
+        Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-.wrap { max-width: 46rem; margin: 0 auto; padding: 2rem 1.5rem 6rem; }
+.wrap { max-width: 46rem; margin: 0 auto; padding: 2.5rem 1.5rem 6rem; }
 
 header {
+  position: relative;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 1rem;
   flex-wrap: wrap;
-  /* The full category palette as a hairline, so the app announces its own
-     colour scheme before you've filed anything. */
-  border-bottom: 2px solid transparent;
-  border-image: linear-gradient(90deg, #b45309, #be185d, #6d28d9, #1d4ed8, #0f766e) 1;
-  padding-bottom: .9rem;
-  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  margin-bottom: 2.25rem;
+  border-bottom: 1px solid var(--rule);
 }
-header h1 { font-size: 1.15rem; margin: 0; letter-spacing: .01em; }
-header .count { color: var(--ink-faint); font-size: .85rem; font-weight: 400; }
+/* The full category palette as a rounded bar. A pseudo-element rather than
+   border-image, because border-image cannot take a radius. */
+header::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -1.5px;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #b45309, #db2777, #6d28d9, #1d4ed8, #0f766e);
+}
+header h1 {
+  font-size: 1.4rem;
+  margin: 0;
+  font-weight: 640;
+  letter-spacing: -.021em;
+}
+header .count { color: var(--ink-faint); font-size: .85rem; font-weight: 450; letter-spacing: 0; }
 header .tools { display: flex; gap: .5rem; }
 
 button {
   font: inherit;
   font-size: .875rem;
-  padding: .4rem .75rem;
+  font-weight: 500;
+  padding: .45rem .8rem;
   border: 1px solid var(--rule);
   background: var(--card);
   color: var(--ink);
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   cursor: pointer;
-  transition: color .12s ease, border-color .12s ease, background-color .12s ease;
+  box-shadow: var(--shadow-1);
+  transition: color .13s ease, border-color .13s ease, background-color .13s ease,
+              box-shadow .13s ease, transform .13s ease;
 }
-button:hover { border-color: var(--accent); color: var(--accent); }
+button:hover { border-color: #d3d7de; color: var(--accent); transform: translateY(-1px); }
+button:active { transform: none; }
 button.primary {
-  background: linear-gradient(135deg, var(--accent-deep), var(--accent));
+  background: var(--accent);
   color: #fff;
   border-color: transparent;
-  padding: .5rem 1.1rem;
-  box-shadow: 0 1px 2px rgba(122,43,98,.25);
+  padding: .55rem 1.15rem;
+  font-weight: 550;
+  box-shadow: 0 1px 2px rgba(192,68,46,.2), 0 6px 16px -6px rgba(192,68,46,.45);
 }
-button.primary:hover { color: #fff; filter: brightness(1.08); }
+button.primary:hover { color: #fff; background: #ab3b27; }
+/* Disabled reads as inert grey rather than a washed-out accent, which looked
+   like a broken colour rather than a disabled control. */
 button.primary:disabled {
-  opacity: .3;
+  background: var(--rule-soft);
+  color: var(--ink-faint);
+  border-color: var(--rule);
   cursor: not-allowed;
   box-shadow: none;
-  filter: none;
+  transform: none;
 }
 button.link {
-  border: none; background: none; padding: .2rem .35rem;
-  color: var(--ink-soft); text-decoration: underline;
+  border: none; background: none; padding: .25rem .4rem;
+  color: var(--ink-soft); text-decoration: none;
+  box-shadow: none; border-radius: 6px;
 }
-button.link:hover { color: var(--accent); }
-button.danger:hover { color: #b91c1c; border-color: transparent; }
+button.link:hover {
+  color: var(--accent); background: var(--rule-soft);
+  transform: none; border-color: transparent;
+}
+button.danger:hover { color: #be123c; background: #fef2f3; border-color: transparent; }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
 
 /* ---- add form ---- */
 form.compose {
   background: var(--card);
   border: 1px solid var(--rule);
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 2.25rem;
-  box-shadow: 0 1px 3px rgba(23,20,15,.05);
+  border-radius: var(--r-lg);
+  padding: 1.25rem 1.35rem;
+  margin-bottom: 2.5rem;
+  box-shadow: var(--shadow-1);
+  transition: box-shadow .18s ease;
 }
+form.compose:focus-within { box-shadow: var(--shadow-2); }
 textarea.text {
   width: 100%;
   min-height: 5.5rem;
   resize: vertical;
-  font-family: Georgia, "Iowan Old Style", serif;
-  font-size: 1.0625rem;
+  font-family: "Iowan Old Style", Charter, Georgia, serif;
+  font-size: 1.125rem;
   line-height: 1.6;
   color: var(--ink);
   border: none;
@@ -119,9 +160,9 @@ textarea.text {
 textarea.text::placeholder { color: var(--ink-faint); }
 
 .optional {
-  border-top: 1px dashed var(--rule);
-  margin-top: .75rem;
-  padding-top: .75rem;
+  border-top: 1px solid var(--rule-soft);
+  margin-top: 1rem;
+  padding-top: .85rem;
 }
 .optional summary {
   cursor: pointer;
@@ -129,40 +170,46 @@ textarea.text::placeholder { color: var(--ink-faint); }
   font-size: .8125rem;
   list-style: none;
   user-select: none;
+  border-radius: 6px;
+  transition: color .13s ease;
 }
 .optional summary:hover { color: var(--accent); }
 .optional summary::-webkit-details-marker { display: none; }
-.optional summary::before { content: "+ "; color: var(--accent); }
+.optional summary::before { content: "+ "; color: var(--accent); font-weight: 600; }
 .optional[open] summary::before { content: "\2212 "; }
 
 .fields {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-  gap: .6rem .9rem;
-  margin-top: .85rem;
+  gap: .75rem .9rem;
+  margin-top: 1rem;
 }
-.fields label { display: flex; flex-direction: column; gap: .2rem; }
-.fields span { font-size: .75rem; color: var(--ink-faint); letter-spacing: .02em; }
+.fields label { display: flex; flex-direction: column; gap: .3rem; }
+.fields span {
+  font-size: .6875rem; color: var(--ink-faint);
+  letter-spacing: .06em; font-weight: 600;
+}
 .fields input, .fields textarea {
   font: inherit;
   font-size: .9375rem;
-  padding: .4rem .5rem;
+  padding: .5rem .6rem;
   border: 1px solid var(--rule);
-  border-radius: 4px;
-  background: #fdfcfa;
+  border-radius: var(--r-sm);
+  background: #fcfcfd;
   color: var(--ink);
+  transition: border-color .13s ease, background-color .13s ease;
 }
 .fields textarea { min-height: 3.5rem; resize: vertical; }
 .fields .wide { grid-column: 1 / -1; }
 .fields input:focus, .fields textarea:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: -1px;
+  outline: none;
+  border-color: var(--accent);
   background: #fff;
 }
 
 .compose-actions {
   display: flex; align-items: center; gap: .75rem;
-  margin-top: .9rem;
+  margin-top: 1.1rem;
 }
 .hint { color: var(--ink-faint); font-size: .78rem; }
 
@@ -171,16 +218,17 @@ textarea.text::placeholder { color: var(--ink-faint); }
    star idiom only reads unambiguously on a card. */
 .fav-toggle {
   font-size: .8125rem;
-  padding: .35rem .65rem;
+  padding: .38rem .7rem;
+  border-radius: 999px;
   color: var(--ink-soft);
 }
-.fav-toggle:hover { color: var(--gold); border-color: var(--gold); }
+.fav-toggle:hover { color: var(--gold); border-color: #e5d5a8; }
 .fav-toggle.on {
   color: var(--gold);
-  border-color: var(--gold);
+  border-color: #e5d5a8;
   background: var(--gold-wash);
 }
-#filter { margin: -1.25rem 0 1.1rem; }
+#filter { margin: -1.5rem 0 1.1rem; }
 /* When there's nothing to filter the host must leave no trace, or its negative
    top margin drags the list up under the compose form. */
 #filter:empty { display: none; }
@@ -188,39 +236,42 @@ textarea.text::placeholder { color: var(--ink-faint); }
 /* The card star. Absolute so it never pushes the quote text around. */
 .fav {
   position: absolute;
-  top: .7rem;
-  right: .8rem;
+  top: .85rem;
+  right: .95rem;
   border: none;
   background: none;
-  padding: .1rem .25rem;
-  font-size: 1.15rem;
+  padding: .15rem .3rem;
+  font-size: 1.2rem;
   line-height: 1;
   color: var(--ink-faint);
+  box-shadow: none;
   opacity: 0;                      /* revealed on hover — see below */
-  transition: opacity .12s ease, color .12s ease;
+  transition: opacity .13s ease, color .13s ease, transform .13s ease;
 }
 .fav.on { color: var(--gold); opacity: 1; }   /* favorited: always visible */
 .quote:hover .fav { opacity: 1; }
 /* Without this the unfavorited star is unreachable by keyboard, since it's
    only ever revealed by a mouse hover. */
-.fav:focus-visible { opacity: 1; outline: 2px solid var(--gold); border-radius: 4px; }
-.fav:hover { color: var(--gold); border-color: transparent; }
+.fav:focus-visible { opacity: 1; }
+.fav:hover { color: var(--gold); border-color: transparent; transform: scale(1.15); }
 
 /* ---- categories ---- */
 /* The group bar. Pills rather than the square toggles above it, so a row of
    them reads as one set of alternatives instead of five separate switches. */
-#categories { display: flex; flex-wrap: wrap; gap: .35rem; margin: 0 0 1.25rem; }
+#categories { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 1.4rem; }
 #categories:empty { display: none; }
 /* No favorites row above us: inherit its job of pulling up under the compose
    form. If it is there, it already spent 1.1rem of gap — close most of it. */
-#filter:empty + #categories { margin-top: -1.25rem; }
-#filter:not(:empty) + #categories { margin-top: -.75rem; }
+#filter:empty + #categories { margin-top: -1.5rem; }
+#filter:not(:empty) + #categories { margin-top: -.7rem; }
 
 .cat-chip {
   font-size: .78rem;
-  padding: .28rem .7rem;
+  font-weight: 500;
+  padding: .32rem .75rem;
   border-radius: 999px;
   color: var(--ink-soft);
+  box-shadow: none;
 }
 /* Every tint below is mixed from the one --cat the JS assigned, so a category's
    chip, card edge and label can never drift out of sync. */
@@ -228,15 +279,19 @@ textarea.text::placeholder { color: var(--ink-faint); }
 .cat-chip.c4, .cat-chip.c5, .cat-chip.c6, .cat-chip.c7 {
   color: var(--cat);
   background: #fff;                                      /* pre-color-mix fallback */
-  background: color-mix(in srgb, var(--cat) 8%, #fff);
-  border-color: #e6dfd3;
-  border-color: color-mix(in srgb, var(--cat) 28%, #fff);
+  background: color-mix(in srgb, var(--cat) 7%, #fff);
+  border-color: var(--rule);
+  border-color: color-mix(in srgb, var(--cat) 22%, #fff);
 }
-.cat-chip:hover { border-color: var(--cat, var(--accent)); color: var(--cat, var(--accent)); }
+.cat-chip:hover {
+  border-color: var(--cat, var(--accent));
+  color: var(--cat, var(--accent));
+}
 .cat-chip.on {
   background: var(--cat, var(--ink));
-  border-color: var(--cat, var(--ink));
+  border-color: transparent;
   color: #fff;
+  box-shadow: 0 2px 8px -2px rgba(16,18,24,.3);
 }
 .cat-chip.on:hover { color: #fff; filter: brightness(1.08); }
 
@@ -247,104 +302,126 @@ textarea.text::placeholder { color: var(--ink-faint); }
   background: none;
   padding: 0;
   font: inherit;
-  font-size: .72rem;
-  font-weight: 600;
-  letter-spacing: .04em;
+  font-size: .6875rem;
+  font-weight: 650;
+  letter-spacing: .07em;
   text-transform: uppercase;
   color: var(--cat, var(--ink-soft));
+  box-shadow: none;
 }
-.meta .cat:hover { filter: brightness(1.15); text-decoration: underline; }
+.meta .cat:hover { filter: brightness(1.15); transform: none; background: none; }
 
 /* ---- list ---- */
 .quote {
   position: relative;
   background: var(--card);
   border: 1px solid var(--rule);
-  border-radius: 8px;
-  padding: 1.1rem 1.25rem;
-  margin-bottom: .9rem;
-  transition: box-shadow .15s ease, border-color .15s ease;
+  border-radius: var(--r-lg);
+  padding: 1.35rem 1.5rem;
+  margin-bottom: .85rem;
+  box-shadow: var(--shadow-1);
+  transition: box-shadow .18s ease, transform .18s ease, border-color .18s ease;
 }
-.quote:hover { box-shadow: 0 2px 10px rgba(23,20,15,.07); }
-/* inset shadow, not border-left: a real border would shift this card's inner
-   content 2px and misalign it against every unfavorited card. */
-.quote.has-cat { box-shadow: inset 3px 0 0 var(--cat); }
-.quote.has-cat:hover { box-shadow: inset 3px 0 0 var(--cat), 0 2px 10px rgba(23,20,15,.07); }
-/* Declared last so a starred quote keeps the gold edge: there is one edge and
-   two things want it, and the category is still legible on its own chip. */
-.quote.is-fav { box-shadow: inset 3px 0 0 var(--gold); }
-.quote.is-fav:hover { box-shadow: inset 3px 0 0 var(--gold), 0 2px 10px rgba(23,20,15,.07); }
+.quote:hover { box-shadow: var(--shadow-2); transform: translateY(-1px); }
+/* The marker is an absolutely-positioned bar, not a border-left (which would
+   shift inner content 3px and misalign against unmarked cards) and no longer an
+   inset box-shadow either: an inset shadow follows the card's border-radius, so
+   at 16px it tapered into a crescent at both corners. Insetting it vertically
+   gives a clean pill and frees box-shadow to carry elevation alone, which is
+   why no state below has to re-state the lift. */
+.quote.has-cat::before,
+.quote.is-fav::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 1.15rem;
+  bottom: 1.15rem;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+}
+.quote.has-cat::before { background: var(--cat); }
+/* Declared last so a starred quote keeps the gold marker: there is one marker
+   and two things want it, and the category is still legible on its own chip. */
+.quote.is-fav::before { background: var(--gold); }
 .quote blockquote {
   margin: 0;
-  padding-right: 1.75rem;          /* keeps long first lines clear of the star */
-  font-family: Georgia, "Iowan Old Style", serif;
-  font-size: 1.0625rem;
-  line-height: 1.65;
+  padding-right: 1.9rem;           /* keeps long first lines clear of the star */
+  font-family: "Iowan Old Style", Charter, Georgia, serif;
+  font-size: 1.125rem;
+  line-height: 1.62;
+  letter-spacing: -.003em;
   white-space: pre-wrap;
 }
-.attrib { margin-top: .6rem; font-size: .875rem; color: var(--ink-soft); }
+.attrib { margin-top: .7rem; font-size: .875rem; color: var(--ink-soft); }
 .attrib .author { font-weight: 600; color: var(--accent); }
 .attrib .source { font-style: italic; }
 .note {
-  margin-top: .7rem;
-  padding-left: .75rem;
+  margin-top: .8rem;
+  padding: .1rem 0 .1rem .85rem;
   border-left: 2px solid var(--cat, var(--rule));
+  border-radius: 1px;
   font-size: .875rem;
   color: var(--ink-soft);
   white-space: pre-wrap;
 }
 .meta {
-  margin-top: .8rem;
-  padding-top: .6rem;
-  border-top: 1px solid #f0ece5;
-  display: flex; align-items: center; gap: .35rem; flex-wrap: wrap;
+  margin-top: 1rem;
+  padding-top: .7rem;
+  border-top: 1px solid var(--rule-soft);
+  display: flex; align-items: center; gap: .4rem; flex-wrap: wrap;
   font-size: .78rem; color: var(--ink-faint);
 }
 .meta .spacer { flex: 1; }
-.meta a { color: var(--ink-soft); }
-.meta a:hover { color: var(--accent); }
+.meta a { color: var(--ink-soft); text-decoration: none; }
+.meta a:hover { color: var(--accent); text-decoration: underline; }
 
 .empty {
   text-align: center;
   color: var(--ink-faint);
-  padding: 3rem 1rem;
+  padding: 3.5rem 1rem;
   font-size: .9375rem;
 }
 
 /* ---- notices ---- */
 .notice {
-  padding: .7rem .9rem;
-  border-radius: 6px;
-  border-left: 3px solid currentColor;
+  padding: .8rem 1rem;
+  border-radius: var(--r-md);
+  border: 1px solid currentColor;
   font-size: .875rem;
   margin-bottom: 1rem;
   display: flex; gap: .75rem; align-items: flex-start;
 }
 .notice .spacer { flex: 1; }
-.notice.warn { background: var(--warn-bg); color: var(--warn-ink); }
-.notice.info { background: #eaf1fb; color: #1d4ed8; }
-.notice.bad  { background: #fdeaea; color: #b91c1c; }
-.notice button.link { color: inherit; opacity: .8; }
-.notice button.link:hover { color: inherit; opacity: 1; }
+.notice.warn { background: var(--warn-bg); color: var(--warn-ink); border-color: #eddcc0; }
+.notice.info { background: #eff4fe; color: #1d4ed8; border-color: #d5e2fb; }
+.notice.bad  { background: #fef2f3; color: #be123c; border-color: #f7d4d9; }
+.notice button.link { color: inherit; opacity: .75; }
+.notice button.link:hover { color: inherit; opacity: 1; background: rgba(0,0,0,.04); }
 
 dialog {
   border: 1px solid var(--rule);
-  border-top: 3px solid var(--accent);
-  border-radius: 8px;
-  padding: 1.25rem;
+  border-radius: var(--r-lg);
+  padding: 1.5rem;
   max-width: 30rem;
   color: var(--ink);
   font: inherit;
-  box-shadow: 0 8px 30px rgba(23,20,15,.18);
+  box-shadow: 0 24px 60px -12px rgba(16,18,24,.3);
 }
-dialog::backdrop { background: rgba(23,20,15,.4); }
-dialog h2 { margin: 0 0 .5rem; font-size: 1rem; }
-dialog p { margin: 0 0 1rem; font-size: .9375rem; color: var(--ink-soft); }
+dialog::backdrop { background: rgba(16,18,24,.45); backdrop-filter: blur(2px); }
+dialog h2 { margin: 0 0 .6rem; font-size: 1.0625rem; font-weight: 620; letter-spacing: -.015em; }
+dialog p { margin: 0 0 1.25rem; font-size: .9375rem; color: var(--ink-soft); }
 dialog .row { display: flex; gap: .5rem; justify-content: flex-end; flex-wrap: wrap; }
-#import-replace { color: #b91c1c; }
+#import-replace { color: #be123c; }
 #import-merge {
-  background: linear-gradient(135deg, var(--accent-deep), var(--accent));
+  background: var(--accent);
   color: #fff;
   border-color: transparent;
 }
-#import-merge:hover { color: #fff; filter: brightness(1.08); }
+#import-merge:hover { color: #fff; background: #ab3b27; }
+
+/* Motion here is decoration, not information — every transition above is safe
+   to drop for anyone who has asked the OS to stop moving things. */
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+  button:hover, .quote:hover, .fav:hover { transform: none; }
+}
