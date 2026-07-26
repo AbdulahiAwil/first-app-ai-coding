@@ -33,6 +33,9 @@
         source: typeof q.source === 'string' ? q.source : '',
         note: typeof q.note === 'string' ? q.note : '',
         link: typeof q.link === 'string' ? q.link : '',
+        // Trimmed, unlike the other strings: this one is a grouping key, and
+        // " Stoicism" from a hand-edited import must not become its own group.
+        category: typeof q.category === 'string' ? q.category.trim() : '',
         tags: Array.isArray(q.tags) ? q.tags.filter(function (t) { return typeof t === 'string'; }) : [],
         // === true, not truthy: junk from a hand-edited import lands on false
         // rather than becoming a favorite by accident.
@@ -103,6 +106,9 @@
         ['text', 'author', 'source', 'note', 'link'].forEach(function (k) {
           if (typeof fields[k] === 'string') q[k] = fields[k];
         });
+        // Refiling a quote is an edit of the quote, so it belongs on this side
+        // of the line and does bump updatedAt (unlike favorite).
+        if (typeof fields.category === 'string') q.category = fields.category.trim();
         q.updatedAt = new Date().toISOString();
         persist();
         return q;
@@ -116,6 +122,21 @@
         q.favoritedAt = q.favorite ? new Date().toISOString() : '';
         persist();
         return q;
+      },
+      // {list: [{name, count}] sorted alphabetically, uncategorized: n}
+      categories: function () {
+        var counts = {}, loose = 0;
+        quotes.forEach(function (q) {
+          if (q.category) counts[q.category] = (counts[q.category] || 0) + 1;
+          else loose++;
+        });
+        var names = Object.keys(counts).sort(function (a, b) {
+          return a.localeCompare(b, undefined, { sensitivity: 'base' });
+        });
+        return {
+          list: names.map(function (n) { return { name: n, count: counts[n] }; }),
+          uncategorized: loose
+        };
       },
       favoriteCount: function () {
         var n = 0;
@@ -224,13 +245,14 @@
       text: fText.value.trim(),
       author: $('f-author').value.trim(),
       source: $('f-source').value.trim(),
+      category: $('f-category').value.trim(),
       note: $('f-note').value.trim(),
       link: $('f-link').value.trim(),
       favorite: composeFav
     };
   }
   function clearCompose() {
-    ['f-text', 'f-author', 'f-source', 'f-note', 'f-link'].forEach(function (id) { $(id).value = ''; });
+    ['f-text', 'f-author', 'f-source', 'f-category', 'f-note', 'f-link'].forEach(function (id) { $(id).value = ''; });
     $('optional').open = false;
     $('save').disabled = true;
     composeFav = false;
@@ -258,6 +280,9 @@
     // A quote starred at capture time should appear even if the favorites view
     // is already open, so it joins the snapshot rather than waiting for a toggle.
     if (filterFavorites && saved.favorite) favSnapshot[saved.id] = true;
+    // Saving into a group you aren't looking at would otherwise render as
+    // nothing happening at all, so drop back to the full list.
+    if (filterCategory !== null && saved.category !== filterCategory) filterCategory = null;
     clearCompose();
     fText.focus();
     transient = null;
@@ -277,6 +302,21 @@
   // from under the cursor.
   var favSnapshot = null;
 
+  // Category view state, also not persisted. null = every quote, '' = the
+  // uncategorized ones, otherwise the exact category name. No snapshot here:
+  // refiling a quote out of the group you're reading is a move you asked for,
+  // so watching it leave is the honest result.
+  var filterCategory = null;
+
+  // Deterministic colour slot for a category name. The same group gets the same
+  // hue on every reload and on every surface it appears on, without storing a
+  // colour on the quote — the palette itself stays in style.css as .c0-.c7.
+  function categoryClass(name) {
+    var h = 0;
+    for (var i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 100003;
+    return 'c' + (h % 8);
+  }
+
   function starButton(q) {
     var b = el('button', q.favorite ? 'fav on' : 'fav', q.favorite ? '★' : '☆');
     b.type = 'button';
@@ -294,6 +334,7 @@
 
   function renderQuote(q) {
     var card = el('article', q.favorite ? 'quote is-fav' : 'quote');
+    if (q.category) card.classList.add('has-cat', categoryClass(q.category));
 
     card.appendChild(starButton(q));
 
@@ -311,6 +352,16 @@
     if (q.note) card.appendChild(el('p', 'note', q.note));
 
     var meta = el('div', 'meta');
+
+    if (q.category) {
+      var cat = el('button', 'cat ' + categoryClass(q.category), q.category);
+      cat.type = 'button';
+      cat.title = 'Show only ' + q.category;
+      cat.addEventListener('click', function () { filterCategory = q.category; render(); });
+      meta.appendChild(cat);
+      meta.appendChild(el('span', null, '·'));
+    }
+
     meta.appendChild(el('span', null, formatDate(q.createdAt)));
 
     if (q.link) {
@@ -350,6 +401,7 @@
     // Keeps the accent edge so it doesn't flicker off mid-edit, but no star —
     // one control per card, and Store.update() can't touch the flag anyway.
     var card = el('article', q.favorite ? 'quote is-fav' : 'quote');
+    if (q.category) card.classList.add('has-cat', categoryClass(q.category));
     var form = el('form');
 
     var ta = el('textarea', 'text');
@@ -367,8 +419,10 @@
       fields.appendChild(l);
       return input;
     }
-    var author = field('AUTHOR', q.author, false, false);
-    var source = field('SOURCE', q.source, false, false);
+    var author   = field('AUTHOR', q.author, false, false);
+    var source   = field('SOURCE', q.source, false, false);
+    var category = field('CATEGORY', q.category, false, false);
+    category.setAttribute('list', 'category-list');   // same suggestions as compose
     var note   = field('WHY YOU SAVED IT', q.note, true, true);
     var link   = field('LINK OR LOCATION', q.link, true, false);
     form.appendChild(fields);
@@ -393,6 +447,7 @@
         text: ta.value.trim(),
         author: author.value.trim(),
         source: source.value.trim(),
+        category: category.value.trim(),
         note: note.value.trim(),
         link: link.value.trim()
       });
@@ -430,6 +485,47 @@
     host.appendChild(b);
   }
 
+  // Feeds the <datalist> both category inputs point at, so refiling a quote
+  // means picking the group you already made rather than retyping it slightly
+  // differently and splitting it in two.
+  function syncCategoryList(list) {
+    var host = $('category-list');
+    host.textContent = '';
+    list.forEach(function (c) {
+      var o = el('option');
+      o.value = c.name;
+      host.appendChild(o);
+    });
+  }
+
+  function renderCategories(info, total) {
+    var host = $('categories');
+    host.textContent = '';
+    if (!info.list.length && filterCategory === null) return;
+
+    function chip(label, value, count) {
+      var on = filterCategory === value;
+      var b = el('button', on ? 'cat-chip on' : 'cat-chip', label + ' · ' + count);
+      // Named groups only. "All" and "Uncategorized" stay neutral so they read
+      // as controls rather than as two more groups.
+      if (value) b.classList.add(categoryClass(value));
+      b.type = 'button';
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      b.addEventListener('click', function () {
+        filterCategory = on ? null : value;
+        render();
+      });
+      host.appendChild(b);
+    }
+
+    // Always present while a group is open. Groups disappear as you empty them,
+    // so without a fixed way back you could be left filtered to a category that
+    // no longer has a chip.
+    if (filterCategory !== null) chip('All', null, total);
+    info.list.forEach(function (c) { chip(c.name, c.name, c.count); });
+    if (info.uncategorized) chip('Uncategorized', '', info.uncategorized);
+  }
+
   function render() {
     renderNotices();
 
@@ -443,18 +539,36 @@
     $('count').textContent = all.length ? '· ' + all.length : '';
     renderFilter(favCount);
 
-    // Filter after sorting; favorites never reorder the list.
-    var quotes = filterFavorites
-      ? all.filter(function (q) { return favSnapshot[q.id] === true; })
-      : all;
+    var cats = Store.categories();
+    syncCategoryList(cats.list);
+    renderCategories(cats, all.length);
+
+    // Filter after sorting; neither filter reorders the list.
+    var quotes = all;
+    if (filterFavorites) {
+      quotes = quotes.filter(function (q) { return favSnapshot[q.id] === true; });
+    }
+    if (filterCategory !== null) {
+      quotes = quotes.filter(function (q) { return q.category === filterCategory; });
+    }
 
     var list = $('list');
     list.textContent = '';
 
     if (!quotes.length) {
-      list.appendChild(el('p', 'empty', filterFavorites
-        ? 'No favorites in view. Turn the filter off and star something.'
-        : 'Nothing saved yet. Paste something above.'));
+      var message;
+      if (filterCategory !== null && filterFavorites) {
+        message = 'Nothing starred in this group.';
+      } else if (filterCategory !== null) {
+        message = filterCategory
+          ? 'Nothing left in ' + filterCategory + '.'
+          : 'Every quote has a category.';
+      } else if (filterFavorites) {
+        message = 'No favorites in view. Turn the filter off and star something.';
+      } else {
+        message = 'Nothing saved yet. Paste something above.';
+      }
+      list.appendChild(el('p', 'empty', message));
       return;
     }
 

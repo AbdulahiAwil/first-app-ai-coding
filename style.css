@@ -1,20 +1,43 @@
 :root {
-  --ink: #1c1a17;
+  --ink: #17140f;
   --ink-soft: #6b6459;
   --ink-faint: #9a9186;
-  --rule: #e3ddd3;
-  --bg: #faf8f5;
+  --rule: #e6dfd3;
+  --bg: #fbf9f5;
   --card: #fff;
-  --accent: #7a3e2f;
+
+  --accent: #a83c2c;          /* rust — the app's own colour */
+  --accent-deep: #7a2b62;     /* plum, the far end of the primary gradient */
+  --gold: #c0891b;            /* favourites. A star reads gold, not rust. */
+  --gold-wash: #fdf5e3;
+
   --warn-bg: #fdf3e7;
   --warn-ink: #7a4b12;
 }
+
+/* The category palette. JS picks a slot with categoryClass(); every colour
+   below is a 700-level tone that still clears contrast on white at 12px, since
+   these get used for small uppercase labels. */
+.c0 { --cat: #b45309; }   /* amber   */
+.c1 { --cat: #b91c1c; }   /* red     */
+.c2 { --cat: #a21caf; }   /* fuchsia */
+.c3 { --cat: #6d28d9; }   /* violet  */
+.c4 { --cat: #1d4ed8; }   /* blue    */
+.c5 { --cat: #0f766e; }   /* teal    */
+.c6 { --cat: #4d7c0f; }   /* olive   */
+.c7 { --cat: #be185d; }   /* pink    */
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  background: var(--bg);
+  /* Colour pooled at the top, where there's no text. The reading column stays
+     near-white so the serif keeps its contrast. */
+  background:
+    radial-gradient(58rem 22rem at 10% -10%, #fce9d8 0%, rgba(252,233,216,0) 60%),
+    radial-gradient(52rem 20rem at 88% -6%, #e4ebfb 0%, rgba(228,235,251,0) 62%),
+    var(--bg);
+  background-attachment: fixed;
   color: var(--ink);
   font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
 }
@@ -27,7 +50,10 @@ header {
   justify-content: space-between;
   gap: 1rem;
   flex-wrap: wrap;
-  border-bottom: 1px solid var(--rule);
+  /* The full category palette as a hairline, so the app announces its own
+     colour scheme before you've filed anything. */
+  border-bottom: 2px solid transparent;
+  border-image: linear-gradient(90deg, #b45309, #be185d, #6d28d9, #1d4ed8, #0f766e) 1;
   padding-bottom: .9rem;
   margin-bottom: 2rem;
 }
@@ -44,21 +70,29 @@ button {
   color: var(--ink);
   border-radius: 5px;
   cursor: pointer;
+  transition: color .12s ease, border-color .12s ease, background-color .12s ease;
 }
-button:hover { border-color: var(--ink-faint); }
+button:hover { border-color: var(--accent); color: var(--accent); }
 button.primary {
-  background: var(--ink);
+  background: linear-gradient(135deg, var(--accent-deep), var(--accent));
   color: #fff;
-  border-color: var(--ink);
+  border-color: transparent;
   padding: .5rem 1.1rem;
+  box-shadow: 0 1px 2px rgba(122,43,98,.25);
 }
-button.primary:disabled { opacity: .35; cursor: not-allowed; }
+button.primary:hover { color: #fff; filter: brightness(1.08); }
+button.primary:disabled {
+  opacity: .3;
+  cursor: not-allowed;
+  box-shadow: none;
+  filter: none;
+}
 button.link {
   border: none; background: none; padding: .2rem .35rem;
   color: var(--ink-soft); text-decoration: underline;
 }
-button.link:hover { color: var(--ink); }
-button.danger:hover { color: #a32b1c; }
+button.link:hover { color: var(--accent); }
+button.danger:hover { color: #b91c1c; border-color: transparent; }
 
 /* ---- add form ---- */
 form.compose {
@@ -67,6 +101,7 @@ form.compose {
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 2.25rem;
+  box-shadow: 0 1px 3px rgba(23,20,15,.05);
 }
 textarea.text {
   width: 100%;
@@ -95,8 +130,9 @@ textarea.text::placeholder { color: var(--ink-faint); }
   list-style: none;
   user-select: none;
 }
+.optional summary:hover { color: var(--accent); }
 .optional summary::-webkit-details-marker { display: none; }
-.optional summary::before { content: "+ "; }
+.optional summary::before { content: "+ "; color: var(--accent); }
 .optional[open] summary::before { content: "\2212 "; }
 
 .fields {
@@ -118,7 +154,11 @@ textarea.text::placeholder { color: var(--ink-faint); }
 }
 .fields textarea { min-height: 3.5rem; resize: vertical; }
 .fields .wide { grid-column: 1 / -1; }
-.fields input:focus, .fields textarea:focus { outline: 2px solid #cfc4b4; outline-offset: -1px; }
+.fields input:focus, .fields textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  background: #fff;
+}
 
 .compose-actions {
   display: flex; align-items: center; gap: .75rem;
@@ -134,7 +174,12 @@ textarea.text::placeholder { color: var(--ink-faint); }
   padding: .35rem .65rem;
   color: var(--ink-soft);
 }
-.fav-toggle.on { color: var(--accent); border-color: var(--accent); }
+.fav-toggle:hover { color: var(--gold); border-color: var(--gold); }
+.fav-toggle.on {
+  color: var(--gold);
+  border-color: var(--gold);
+  background: var(--gold-wash);
+}
 #filter { margin: -1.25rem 0 1.1rem; }
 /* When there's nothing to filter the host must leave no trace, or its negative
    top margin drags the list up under the compose form. */
@@ -152,14 +197,63 @@ textarea.text::placeholder { color: var(--ink-faint); }
   line-height: 1;
   color: var(--ink-faint);
   opacity: 0;                      /* revealed on hover — see below */
-  transition: opacity .12s ease;
+  transition: opacity .12s ease, color .12s ease;
 }
-.fav.on { color: var(--accent); opacity: 1; }   /* favorited: always visible */
+.fav.on { color: var(--gold); opacity: 1; }   /* favorited: always visible */
 .quote:hover .fav { opacity: 1; }
 /* Without this the unfavorited star is unreachable by keyboard, since it's
    only ever revealed by a mouse hover. */
-.fav:focus-visible { opacity: 1; outline: 2px solid #cfc4b4; border-radius: 4px; }
-.fav:hover { color: var(--accent); }
+.fav:focus-visible { opacity: 1; outline: 2px solid var(--gold); border-radius: 4px; }
+.fav:hover { color: var(--gold); border-color: transparent; }
+
+/* ---- categories ---- */
+/* The group bar. Pills rather than the square toggles above it, so a row of
+   them reads as one set of alternatives instead of five separate switches. */
+#categories { display: flex; flex-wrap: wrap; gap: .35rem; margin: 0 0 1.25rem; }
+#categories:empty { display: none; }
+/* No favorites row above us: inherit its job of pulling up under the compose
+   form. If it is there, it already spent 1.1rem of gap — close most of it. */
+#filter:empty + #categories { margin-top: -1.25rem; }
+#filter:not(:empty) + #categories { margin-top: -.75rem; }
+
+.cat-chip {
+  font-size: .78rem;
+  padding: .28rem .7rem;
+  border-radius: 999px;
+  color: var(--ink-soft);
+}
+/* Every tint below is mixed from the one --cat the JS assigned, so a category's
+   chip, card edge and label can never drift out of sync. */
+.cat-chip.c0, .cat-chip.c1, .cat-chip.c2, .cat-chip.c3,
+.cat-chip.c4, .cat-chip.c5, .cat-chip.c6, .cat-chip.c7 {
+  color: var(--cat);
+  background: #fff;                                      /* pre-color-mix fallback */
+  background: color-mix(in srgb, var(--cat) 8%, #fff);
+  border-color: #e6dfd3;
+  border-color: color-mix(in srgb, var(--cat) 28%, #fff);
+}
+.cat-chip:hover { border-color: var(--cat, var(--accent)); color: var(--cat, var(--accent)); }
+.cat-chip.on {
+  background: var(--cat, var(--ink));
+  border-color: var(--cat, var(--ink));
+  color: #fff;
+}
+.cat-chip.on:hover { color: #fff; filter: brightness(1.08); }
+
+/* The category on a card. Set in the same small caps as the field labels so it
+   reads as filing, not as part of the quote. */
+.meta .cat {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--cat, var(--ink-soft));
+}
+.meta .cat:hover { filter: brightness(1.15); text-decoration: underline; }
 
 /* ---- list ---- */
 .quote {
@@ -169,10 +263,17 @@ textarea.text::placeholder { color: var(--ink-faint); }
   border-radius: 8px;
   padding: 1.1rem 1.25rem;
   margin-bottom: .9rem;
+  transition: box-shadow .15s ease, border-color .15s ease;
 }
+.quote:hover { box-shadow: 0 2px 10px rgba(23,20,15,.07); }
 /* inset shadow, not border-left: a real border would shift this card's inner
    content 2px and misalign it against every unfavorited card. */
-.quote.is-fav { box-shadow: inset 3px 0 0 var(--accent); }
+.quote.has-cat { box-shadow: inset 3px 0 0 var(--cat); }
+.quote.has-cat:hover { box-shadow: inset 3px 0 0 var(--cat), 0 2px 10px rgba(23,20,15,.07); }
+/* Declared last so a starred quote keeps the gold edge: there is one edge and
+   two things want it, and the category is still legible on its own chip. */
+.quote.is-fav { box-shadow: inset 3px 0 0 var(--gold); }
+.quote.is-fav:hover { box-shadow: inset 3px 0 0 var(--gold), 0 2px 10px rgba(23,20,15,.07); }
 .quote blockquote {
   margin: 0;
   padding-right: 1.75rem;          /* keeps long first lines clear of the star */
@@ -182,12 +283,12 @@ textarea.text::placeholder { color: var(--ink-faint); }
   white-space: pre-wrap;
 }
 .attrib { margin-top: .6rem; font-size: .875rem; color: var(--ink-soft); }
-.attrib .author { font-weight: 600; color: var(--ink); }
+.attrib .author { font-weight: 600; color: var(--accent); }
 .attrib .source { font-style: italic; }
 .note {
   margin-top: .7rem;
   padding-left: .75rem;
-  border-left: 2px solid var(--rule);
+  border-left: 2px solid var(--cat, var(--rule));
   font-size: .875rem;
   color: var(--ink-soft);
   white-space: pre-wrap;
@@ -201,6 +302,7 @@ textarea.text::placeholder { color: var(--ink-faint); }
 }
 .meta .spacer { flex: 1; }
 .meta a { color: var(--ink-soft); }
+.meta a:hover { color: var(--accent); }
 
 .empty {
   text-align: center;
@@ -213,24 +315,36 @@ textarea.text::placeholder { color: var(--ink-faint); }
 .notice {
   padding: .7rem .9rem;
   border-radius: 6px;
+  border-left: 3px solid currentColor;
   font-size: .875rem;
   margin-bottom: 1rem;
   display: flex; gap: .75rem; align-items: flex-start;
 }
 .notice .spacer { flex: 1; }
 .notice.warn { background: var(--warn-bg); color: var(--warn-ink); }
-.notice.info { background: #eef2f7; color: #2b3a4a; }
-.notice.bad  { background: #fce8e6; color: #7f1d1d; }
+.notice.info { background: #eaf1fb; color: #1d4ed8; }
+.notice.bad  { background: #fdeaea; color: #b91c1c; }
+.notice button.link { color: inherit; opacity: .8; }
+.notice button.link:hover { color: inherit; opacity: 1; }
 
 dialog {
   border: 1px solid var(--rule);
+  border-top: 3px solid var(--accent);
   border-radius: 8px;
   padding: 1.25rem;
   max-width: 30rem;
   color: var(--ink);
   font: inherit;
+  box-shadow: 0 8px 30px rgba(23,20,15,.18);
 }
-dialog::backdrop { background: rgba(28,26,23,.35); }
+dialog::backdrop { background: rgba(23,20,15,.4); }
 dialog h2 { margin: 0 0 .5rem; font-size: 1rem; }
 dialog p { margin: 0 0 1rem; font-size: .9375rem; color: var(--ink-soft); }
 dialog .row { display: flex; gap: .5rem; justify-content: flex-end; flex-wrap: wrap; }
+#import-replace { color: #b91c1c; }
+#import-merge {
+  background: linear-gradient(135deg, var(--accent-deep), var(--accent));
+  color: #fff;
+  border-color: transparent;
+}
+#import-merge:hover { color: #fff; filter: brightness(1.08); }

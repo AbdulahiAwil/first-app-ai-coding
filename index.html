@@ -23,10 +23,11 @@
     <textarea class="text" id="f-text" placeholder="Paste or type a quote&hellip;" aria-label="Quote text"></textarea>
 
     <details class="optional" id="optional">
-      <summary>author, source, note, link &mdash; all optional</summary>
+      <summary>author, source, category, note, link &mdash; all optional</summary>
       <div class="fields">
         <label><span>AUTHOR</span><input type="text" id="f-author" autocomplete="off"></label>
         <label><span>SOURCE</span><input type="text" id="f-source" autocomplete="off" placeholder="book, talk, article&hellip;"></label>
+        <label><span>CATEGORY</span><input type="text" id="f-category" autocomplete="off" list="category-list" placeholder="how you group it"></label>
         <label class="wide"><span>WHY YOU SAVED IT</span><textarea id="f-note"></textarea></label>
         <label class="wide"><span>LINK OR LOCATION</span><input type="text" id="f-link" autocomplete="off" placeholder="url, page number, timestamp"></label>
       </div>
@@ -41,11 +42,16 @@
 
   <div id="filter"></div>
 
+  <div id="categories"></div>
+
   <div id="list"></div>
 
 </div>
 
 <input type="file" id="file" accept="application/json,.json" hidden>
+
+<!-- Filled by render() from the categories already in use. -->
+<datalist id="category-list"></datalist>
 
 <dialog id="import-dialog">
   <h2>Import <span id="import-count"></span></h2>
